@@ -1,150 +1,61 @@
 # Tone of Voice Analysis and Rewriting Service
 
-A FastAPI-based service that analyzes, rewrites, and evaluates text based on tone characteristics. This service helps maintain consistent brand voice across different types of content by overcoming the generic and impersonal nature of AI-generated text.
+A FastAPI-based service that uses LangChain and ChromaDB to analyze, rewrite, and evaluate text based on tone characteristics. This service helps maintain consistent brand voice across different types of content.
 
-## Core Tone Characteristics
+## Architecture
 
-The service analyzes and maintains five key characteristics of brand voice:
+### 1. Tone Controller (`controllers/tone_controller.py`)
+Handles HTTP requests and responses:
+- Text analysis endpoints
+- Document processing
+- Text rewriting
+- Evaluation endpoints
+- Brand signature management
 
-1. **Tone**
-   - Formal vs. Casual
-   - Professional vs. Friendly
-   - Authoritative vs. Collaborative
-   - Warm vs. Direct
+### 2. Tone Service (`services/tone_service.py`)
+Core business logic implementation:
+- LLM integration using LangChain
+- Text analysis using OpenAI
+- Document processing with python-docx
+- Vector storage with ChromaDB
+- Text rewriting and evaluation
 
-2. **Language Style**
-   - Technical vs. Conversational
-   - Academic vs. Creative
-   - Professional vs. Informal
-   - Complex vs. Simple
+### 3. Tone Routes (`routes/tone_routes.py`)
+API route definitions:
+- POST `/tone/analyze/text`
+- POST `/tone/analyze/document`
+- POST `/tone/rewrite`
+- POST `/tone/evaluate`
+- GET/POST `/tone/signature/{brand_id}`
 
-3. **Formality Level**
-   - Formal
-   - Semi-formal
-   - Informal
-   - Technical
+## Key Components
 
-4. **Address Style**
-   - Direct vs. Indirect
-   - Personal vs. Impersonal
-   - Collective vs. Individual
-   - Hierarchical vs. Egalitarian
+### LangChain Integration
+```python
+from langchain.chains import LLMChain
+from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
 
-5. **Emotional Appeal**
-   - Rational vs. Emotional
-   - Inspirational vs. Informative
-   - Humorous vs. Serious
-   - Authoritative vs. Approachable
-
-## NLP Analysis Capabilities
-
-The service employs advanced NLP techniques to analyze and maintain brand voice:
-
-1. **Semantic Analysis**
-   - Word choice patterns
-   - Phrase structures
-   - Contextual meaning
-   - Cultural nuances
-
-2. **Syntactic Analysis**
-   - Sentence structure
-   - Grammar patterns
-   - Punctuation usage
-   - Paragraph organization
-
-3. **Pattern Recognition**
-   - Recurring phrases
-   - Common expressions
-   - Brand-specific terminology
-   - Communication patterns
-
-4. **Sentiment Analysis**
-   - Emotional undertones
-   - Tone consistency
-   - Brand voice alignment
-   - Audience engagement
-
-## Features
-
-### 1. Text Analysis
-- Analyze the tone of any text input
-- Extract tone characteristics:
-  - Overall tone (formal, casual, friendly, etc.)
-  - Language style (technical, conversational, academic, etc.)
-  - Formality level
-  - Address style
-  - Emotional appeal
-- Identify language patterns and key phrases
-- Provide confidence scores for analysis
-
-### 2. Document Analysis
-- Process Word documents (.docx files)
-- Extract and analyze text from both paragraphs and tables
-- Generate comprehensive tone signatures
-- Maintain document structure while analyzing content
-
-### 3. Text Rewriting
-- Rewrite text to match specific tone signatures
-- Preserve key information and keywords
-- Maintain original meaning while adjusting tone
-- Support for multiple tone styles
-
-### 4. Evaluation
-- Evaluate rewritten text against original content
-- Provide detailed metrics:
-  - Fluency
-  - Authenticity
-  - Tone alignment
-  - Readability
-  - Overall score
-- Generate strengths and improvement suggestions
-- Track brand voice alignment
-- Assess target audience appeal
-
-### 5. Brand Voice Management
-- Store and retrieve brand signatures
-- Track multiple brand voices
-- Maintain version history of tone signatures
-- Support for brand-specific evaluations
-
-## API Endpoints
-
-### Text Analysis
-```http
-POST /tone/analyze/text
+# Example from tone_service.py
+def analyze_tone(text: str):
+    chain = LLMChain(llm=OpenAI(temperature=0), prompt=signature_prompt)
+    return chain.run({"text": text})
 ```
-Analyze the tone of a given text.
 
-### Document Analysis
-```http
-POST /tone/analyze/document
-```
-Analyze the tone of a Word document.
+### ChromaDB Vector Store
+```python
+from langchain.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
 
-### Text Rewriting
-```http
-POST /tone/rewrite
+# Example from tone_service.py
+def process_document(file_path: str):
+    embeddings = OpenAIEmbeddings()
+    vectorstore = Chroma.from_documents(
+        documents=texts,
+        embedding=embeddings,
+        persist_directory="./chroma_db"
+    )
 ```
-Rewrite text according to a tone signature.
-
-### Evaluation
-```http
-POST /tone/evaluate
-```
-Evaluate rewritten text against original and signature.
-
-### Brand Signature Management
-```http
-GET /tone/signature/{brand_id}
-POST /tone/signature/{brand_id}
-```
-Get or store brand signatures.
-
-### Combined Operations
-```http
-POST /tone/rewrite-and-evaluate
-```
-Rewrite text using brand signature and evaluate the result in one step.
 
 ## Installation
 
@@ -168,48 +79,38 @@ pip install -r requirements.txt
 4. Set up environment variables:
 ```bash
 cp .env.example .env
-# Edit .env with your OpenAI API key
+# Add your OpenAI API key to .env
+OPENAI_API_KEY=your_api_key_here
 ```
 
-## Usage
+## Running the Application
 
-1. Start the server:
+1. Start the FastAPI server:
 ```bash
 uvicorn main:app --reload
 ```
 
 2. Access the API documentation:
-```
-http://localhost:8000/docs
-```
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
 
-### Example Request
+## API Usage Examples
 
+### 1. Analyze Text
 ```python
 import requests
 
-# Analyze text
 response = requests.post(
     "http://localhost:8000/tone/analyze/text",
     json={
-        "text": "Your text to analyze",
-        "language": "en"
+        "text": "Your text to analyze"
     }
 )
 print(response.json())
+```
 
-# Rewrite text
-response = requests.post(
-    "http://localhost:8000/tone/rewrite",
-    json={
-        "text": "Text to rewrite",
-        "signature": "formal,professional",
-        "preserve_keywords": ["important", "terms"]
-    }
-)
-print(response.json())
-
-# Analyze document
+### 2. Process Document
+```python
 with open('document.docx', 'rb') as f:
     files = {'file': ('document.docx', f, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')}
     response = requests.post(
@@ -217,23 +118,47 @@ with open('document.docx', 'rb') as f:
         files=files
     )
 print(response.json())
+```
 
-# Rewrite and evaluate text
+### 3. Rewrite Text
+```python
 response = requests.post(
-    "http://localhost:8000/tone/rewrite-and-evaluate",
+    "http://localhost:8000/tone/rewrite",
     json={
-        "text": "Original text to rewrite",
-        "brand_id": "brand123",
-        "brand_name": "Example Brand"
+        "text": "Text to rewrite",
+        "signature": "formal,professional"
     }
 )
 print(response.json())
 ```
 
+## Project Structure
+```
+tone_of_voice/
+├── controllers/
+│   └── tone_controller.py    # Request handling
+├── services/
+│   ├── tone_service.py      # Core business logic
+│   └── nlp_service.py       # NLP processing
+├── routes/
+│   └── tone_routes.py       # API route definitions
+├── models/
+│   └── tone_models.py       # Pydantic models
+├── chroma_db/               # Vector database storage
+├── main.py                 # FastAPI application
+└── requirements.txt        # Dependencies
+```
+
+## Dependencies
+- FastAPI: Web framework
+- LangChain: LLM integration
+- OpenAI: Language model
+- ChromaDB: Vector database
+- python-docx: Document processing
+- Pydantic: Data validation
+
 ## Error Handling
-
-The API uses standard HTTP status codes and returns detailed error messages in the following format:
-
+The API returns standardized error responses:
 ```json
 {
     "error": "Error description",
@@ -244,97 +169,9 @@ The API uses standard HTTP status codes and returns detailed error messages in t
 }
 ```
 
-Common error scenarios:
-
-1. **Invalid File Format (400)**
-   - Occurs when uploading non-docx files
-   - Solution: Ensure file is in .docx format
-
-2. **Analysis Error (500)**
-   - Occurs during text analysis
-   - Solution: Check text length and content validity
-
-3. **Document Analysis Error (500)**
-   - Occurs during document processing
-   - Solution: Verify document structure and content
-
-4. **Rewrite Error (500)**
-   - Occurs during text rewriting
-   - Solution: Check signature format and text content
-
-5. **Evaluation Error (500)**
-   - Occurs during text evaluation
-   - Solution: Ensure all required fields are provided
-
-6. **Signature Not Found (404)**
-   - Occurs when accessing non-existent brand signatures
-   - Solution: Create brand signature first
-
-## Rate Limiting
-
-The API implements rate limiting to ensure fair usage:
-- 100 requests per minute per IP
-- 1000 requests per hour per API key
-
-## Best Practices
-
-1. **Text Analysis**
-   - Keep text length under 5000 characters for optimal performance
-   - Use clear, well-structured text for better analysis
-
-2. **Document Processing**
-   - Ensure documents are properly formatted
-   - Maximum file size: 10MB
-   - Supported formats: .docx only
-
-3. **Brand Signatures**
-   - Create unique signatures for different content types
-   - Update signatures periodically to maintain accuracy
-   - Store signature IDs for future reference
-
-4. **Error Handling**
-   - Implement proper error handling in your application
-   - Use appropriate HTTP status codes
-   - Log errors for debugging
-
-## Dependencies
-
-- FastAPI: Web framework
-- LangChain: LLM integration and prompt management
-- OpenAI: Advanced language model for tone analysis
-- Python-docx: Document processing
-- Pydantic: Data validation
-- ChromaDB: Vector storage for pattern matching
-- Redis: Caching
-- spaCy: NLP processing
-- NLTK: Additional NLP capabilities
-- Sentence Transformers: Semantic similarity analysis
-
-## Project Structure
-
-```
-tone_of_voice/
-├── controllers/         # Request handlers
-├── models/             # Data models
-├── routes/             # API routes
-├── services/           # Business logic
-├── chroma_db/          # Vector database
-├── main.py            # Application entry
-└── requirements.txt    # Dependencies
-```
-
 ## Contributing
-
 1. Fork the repository
 2. Create a feature branch
 3. Commit your changes
 4. Push to the branch
 5. Create a Pull Request
-
-## License
-
-[Your License]
-
-## Contact
-
-[Your Contact Information]
