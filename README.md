@@ -93,7 +93,6 @@ uvicorn main:app --reload
 
 2. Access the API documentation:
 - Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
 
 ## API Usage Examples
 
