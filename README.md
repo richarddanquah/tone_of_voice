@@ -139,7 +139,6 @@ tone_of_voice/
 │   └── tone_controller.py    # Request handling
 ├── services/
 │   ├── tone_service.py      # Core business logic
-│   └── nlp_service.py       # NLP processing
 ├── routes/
 │   └── tone_routes.py       # API route definitions
 ├── models/
