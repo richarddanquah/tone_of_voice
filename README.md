@@ -26,6 +26,7 @@ API route definitions:
 - POST `/tone/analyze/document`
 - POST `/tone/rewrite`
 - POST `/tone/evaluate`
+- POST `/tone/rewrite-and-evaluate`
 - GET/POST `/tone/signature/{brand_id}`
 
 ## Key Components
